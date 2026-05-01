@@ -42,7 +42,7 @@ I'm sure there's lots of similar tools out there, but I believe these features m
 - Easy to audit and modify to suit your needs
 - Fetch and place pre-built conf files from remote locations
 - Sample playbooks included (base system, user creation, FAMP stack web server)
-- Post-launch "todo list" reminders the sysadmin should do afterwards
+- Post-launch todo list reminders the sysadmin should do afterwards
 
 ## Requirements
 
@@ -65,6 +65,40 @@ fetch https://your-bucket.s3.amazonaws.com/good-boy.sh
 chmod +x good-boy.sh
 ./good-boy.sh <playbook>
 ```
+
+### Example Output
+
+Here, we'll run the `base` playbook to initialize the baseline FreeBSD environment.
+
+You'll see the tasks run, and then the helpful todo list printed at the end. What a *Good Boy!*
+
+```shell
+$ ./good-boy.sh base
+
+--- STARTING PLAYBOOK: base ---
+
+[i] Temp path = /tmp/tmp.ZRQirYlKnm
+[i] Started at 16:02:46
+--> Ensure pkg system is available... OK
+--> Update system packages... OK
+--> Upgrade system packages... OK
+--> Installing base packages... OK
+--> Replace doas.conf with remote... OK
+--> Enable weekly updates to locate database... OK
+--> Prime locate database... OK
+--> Cleanup cached packages... OK
+--> Delete directory /usr/lib/debug... OK
+[i] DONE! Finished at 16:03:18 (took 00:32)
+
+--- TODO ---
+
+ - Set up SSH
+ - /boot/loader.conf autoboot_delay
+ - Configure swap file
+ - Set timezone
+ - Set host file address
+ - Set regular user account
+ ```
 
 ## Tips
 
