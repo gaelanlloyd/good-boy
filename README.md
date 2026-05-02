@@ -39,6 +39,7 @@ I'm sure there's lots of similar tools out there, but I believe these features m
 - Rapidly bootstraps environments
 - Built-in functions with an easy-to-understand syntax for common tasks
 - Idempotent (mostly!)
+- Backs up any replaced files with timestamped archive copies
 - Easy to audit and modify to suit your needs
 - Fetch and place pre-built conf files from remote locations
 - Sample playbooks included (base system, user creation, FAMP stack web server)
