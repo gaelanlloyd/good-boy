@@ -396,8 +396,8 @@ playbook_base() {
 	run "Prime locate database" /etc/periodic/weekly/310.locate
 
 	# Clean up some junk
-	run "Cleanup cached packages" pkg clean -a -y
-	directoryDelete /usr/lib/debug
+	# run "Cleanup cached packages" pkg clean -a -y
+	# directoryDelete /usr/lib/debug
 
 }
 
