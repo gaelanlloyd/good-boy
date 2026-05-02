@@ -118,6 +118,7 @@ $ ./good-boy.sh base
   - Since some remote files may have similar names, or since these collections may contain many files, this command has an optional `prefix` argument that allows you to organize the remote conf files with a leading prefix (`user--.profile`, `user--.bashrc`, `vim--.vimrc`, `vim--yourcolorscheme`, etc.) *Good Boy* will add the `--` automatically, so just provide the prefix without it.
 - `directoryCreate`
 - `directoryDelete`
+- `ensureUserExists`
 - `serviceStart`
   - Restarts a service if it's already running.
 - `generateSSHKey`
