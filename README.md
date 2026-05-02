@@ -8,6 +8,8 @@ Zero-dependency, native-FreeBSD bootstrapper in a *smol*, single sh script.
 
 ## Background
 
+**Read more about Good Boy [on my blog](https://www.gaelanlloyd.com/blog/good-boy-zero-dependency-freebsd-bootstrapper/)**.
+
 I built *Good Boy* because I wanted a tiny, zero-dependency bootstrapper for fresh FreeBSD installs, especially jails and other baseline systems that I'm frequently spinning up in my homelab.
 
 I had written provisioning scripts before, but they were more complex than I wanted. In the name of being DRY, they were split across multiple function files, with each playbook living in its own file. That meant everything had to live in a Git repo, and a fresh system needed a bunch of setup before anything useful could happen: install Git, generate SSH keys, clone the repo, and only then start bootstrapping.
