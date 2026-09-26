@@ -310,7 +310,7 @@ todo_base() {
 }
 
 todo_user() {
-	echo " - Add the SSH pubkey to user $STR_USER_NAME GitHub/Forgejo accounts"
+	echo " - Add the SSH pubkey to user $STR_USER_NAME GitHub/Codeberg accounts"
 }
 
 todo_famp() {
@@ -489,17 +489,13 @@ playbook_famp() {
 	run "Set ownership of /var/log/apache" doas chown root:wheel /var/log/apache
 	run "Set permissions on /var/log/apache" doas chmod 755 /var/log/apache
 
-	# Enable Apache later, after PHP is set up
-	# run "Enable Apache service" sysrc apache24_enable=YES
-
-	# Start Apache later, after PHP is set up
-	# serviceStart "apache24"
-
 	# --- PHP
 
 	replaceFileWithRemote "php.ini" "/usr/local/etc/" "$URL_REMOTE_PATH_SRC" "php"
 	replaceFileWithRemote "www.conf" "/usr/local/etc/php-fpm.d/" "$URL_REMOTE_PATH_SRC" "php"
 	replaceFileWithRemote "index.php" "/usr/local/www/apache24/data/" "$URL_REMOTE_PATH_SRC" "apache"
+
+	# --- Enable and start services
 
 	run "Enable Apache service" sysrc apache24_enable=YES
 	run "Enable PHP-FPM service" sysrc php_fpm_enable=YES
