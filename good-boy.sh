@@ -359,11 +359,16 @@ if [ "$#" -ne "$INT_EXPECTED_ARGS" ]; then
     exit 1
 fi
 
+# Require the pkg system be bootstrapped first
+# pkg system version mismatches in jails can be complicated to solve, don't try
+if ! pkg -N >/dev/null 2>&1; then
+    die "Bootstrap the pkg system first."
+    exit 1
+fi
+
 # --- PLAYBOOK DEFINITIONS -----------------------------------------------------
 
 playbook_base() {
-
-	run "Ensure pkg system is available" sh -c 'pkg -N > /dev/null 2>&1 || pkg bootstrap -y'
 
 	run "Update system packages" pkg update -q
 
