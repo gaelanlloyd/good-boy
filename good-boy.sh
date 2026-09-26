@@ -478,7 +478,7 @@ playbook_famp() {
 
 	# --- Apache
 
-	replaceFileWithRemote "httpd.conf" "/usr/local/etc/apache24/" "$URL_REMOTE_PATH_SRC"
+	replaceFileWithRemote "httpd.conf" "/usr/local/etc/apache24/" "$URL_REMOTE_PATH_SRC" "apache"
 
 	directoryCreate /usr/local/etc/apache24/virtualhosts
 
