@@ -66,8 +66,9 @@ DIR_USER_HOME="/home/btorres"
 
 STR_SSH_KEY_TYPE="ed25519"
 # STR_SSH_KEY_TYPE="rsa"
-FILEPATH_USER_SSH_PRIVATE_KEY="$DIR_USER_HOME/.ssh/id_rsa"
-FILEPATH_USER_SSH_PUBLIC_KEY="$DIR_USER_HOME/.ssh/id_rsa.pub"
+FILEPATH_USER_SSH="$DIR_USER_HOME/.ssh"
+FILEPATH_USER_SSH_PRIVATE_KEY="$FILEPATH_USER_SSH/id_rsa"
+FILEPATH_USER_SSH_PUBLIC_KEY="$FILEPATH_USER_SSH/id_rsa.pub"
 
 URL_REMOTE_PATH_ROOT="https://example.com/bootstrap"
 URL_REMOTE_PATH_SRC="$URL_REMOTE_PATH_ROOT/src"
@@ -424,9 +425,13 @@ playbook_user() {
 	replaceFileWithRemote ".bashrc" "$DIR_USER_HOME" "$URL_REMOTE_PATH_SRC" "user"
 
 	# Configure SSH authorized_keys
-	replaceFileWithRemote "authorized_keys" "$DIR_USER_HOME/.ssh/" "$URL_REMOTE_PATH_SRC" "user"
-	run "Set ownership of authorized_keys" chown $STR_USER_NAME:$STR_USER_NAME $DIR_USER_HOME/.ssh/authorized_keys
-	run "Set permissions on authorized_keys" chmod 640 $DIR_USER_HOME/.ssh/authorized_keys
+	directoryCreate "$DIR_USER_SSH"
+	run "Set ownership of $DIR_USER_SSH" doas chown $STR_USER_NAME:$STR_USER_NAME "$DIR_USER_SSH"
+	run "Set permissions on $DIR_USER_SSH" doas chmod 700 "$DIR_USER_SSH"
+
+	replaceFileWithRemote "authorized_keys" "$DIR_USER_SSH/" "$URL_REMOTE_PATH_SRC" "user"
+	run "Set ownership of authorized_keys" chown $STR_USER_NAME:$STR_USER_NAME $DIR_USER_SSH/authorized_keys
+	run "Set permissions on authorized_keys" chmod 600 $DIR_USER_SSH/authorized_keys
 
 	run "Silence login" touch $DIR_USER_HOME/.hushlogin
 	run "Set ownership of $DIR_USER_HOME/.hushlogin" chown $STR_USER_NAME:$STR_USER_NAME $DIR_USER_HOME/.hushlogin
