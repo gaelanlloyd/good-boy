@@ -12,13 +12,13 @@ Zero-dependency, native-FreeBSD bootstrapper in a *smol*, single sh script.
 
 I built *Good Boy* because I wanted a tiny, zero-dependency bootstrapper for fresh FreeBSD installs, especially jails and other baseline systems that I'm frequently spinning up in my homelab.
 
-I had written provisioning scripts before, but they were more complex than I wanted. In the name of being DRY, they were split across multiple function files, with each playbook living in its own file. That meant everything had to live in a Git repo, and a fresh system needed a bunch of setup before anything useful could happen: install Git, generate SSH keys, clone the repo, and only then start bootstrapping.
+I had written provisioning scripts before, but they were more complex than I wanted. I tried to keep things DRY, and so the script split all the functions across multiple files, and each playbook lived in its own file. Getting the script loaded onto the target machine required installing and configuring Git, cloning a repo, etc.
 
-*Good Boy* takes the opposite approach. It is one self-contained `sh` script with all playbooks inside it, using only the native FreeBSD shell and base system tools. Supporting source files can live somewhere remote, but only one script needs to be downloaded to kick off the bootstrap process.
+*Good Boy* is much simpler. It's one self-contained `sh` script with everything contained inside it, and it only uses the native FreeBSD shell and base system tools. Supporting source files can live in a remote location, and only the one script needs to be downloaded with `fetch` to kick off the bootstrap process.
 
-This makes the script a little bigger, but keeps the moving parts *smol*.
+This makes the script a little bigger, but it keeps the moving parts *smol*.
 
-The goal is not perfect configuration management. *Good Boy* is only "partially idempotent" in a good-enough-for-me way. Some tasks are safe to rerun, others may overwrite or change things destructively. Use with care, and teach him only the tricks you trust him to perform.
+*Good Boy* is "partially idempotent" in a good-enough-for-me way. Some tasks are safe to rerun, others may overwrite or make destructive changes. Use with care. Teach him only the tricks you trust him to perform.
 
 ## Who's this tool for?
 
@@ -28,13 +28,11 @@ The goal is not perfect configuration management. *Good Boy* is only "partially 
 *Good Boy* is not:
 
 - Meant to be run blindly on fleets of machines, as not every command is truly idempotent.
-- Able to do *everything*. Hence the addition of the post-run todo list.
-
-The point of *Good Boy* is to get the bulk of the work done for you, the heavy lifting... Leaving you free time to spend doing the fine-tuning required to get your system into tip-top shape.
+- Able to do *everything* (the post-run todo list helps the operator remember to perform follow-up actions).
 
 ## Features
 
-I'm sure there's lots of similar tools out there, but I believe these features make *Good Boy* truly stand out from just a simple shell script:
+The internet is a big place, and I'm sure there's lots of similar tools out there&hellip; but I believe these features make *Good Boy* stand out from being just a simple shell script:
 
 - Single-file bootstrapping script with zero dependencies
 - Runs multiple playbooks
@@ -49,22 +47,71 @@ I'm sure there's lots of similar tools out there, but I believe these features m
 
 ## Requirements
 
-- Root access on a freshly-installed FreeBSD environment
-- Network access
+Root or superuser access on a freshly-installed FreeBSD environment that has a working internet connection.
+
+Do these tasks that can sometimes require complex interaction:
+- Bootstrap the pkg system (via `pkg boostrap`)
+- Set up local user accounts for any userland playbooks (`~/.bashrc`, etc.)
 
 ## Quick Start
 
 > [!CAUTION]
 > Please review and customize the included demo playbooks before running them on your system!
 
-You'll want to begin by:
+Steps to get started:
 
-- Cloning this repo
-- Modifying the `good-boy.sh` script
-  - Add and adjust playbooks as necessary
-  - Add supporting files to an accessible remote location
-- Copy the script up to the remote location
-- Then, download it to the target machine, mark it executable, and run the desired playbook(s).
+- Clone this repo
+- Modify the `good-boy.sh` script
+  - Update the globals (user name, report paths, etc.)
+  - Adjust playbooks as necessary
+  - Update the playbook todo lists with your personal post-run notes
+- Upload the script and the supporting conf file subfolder to the remote location
+  - Any network location accessible by the target machine will do. It could be a local FTP server, public FTP server, AWS S3, or any other service that `fetch` can retrieve files from.
+- On the target machine:
+  - Download the `good-boy.sh` script
+  - Mark it executable
+  - Use it to run the desired playbooks
+
+## Creating supporting conf files
+
+The supporting conf files will be stored in a subfolder beside the script and contain the approved, final copies of conf files that you want to install on the machine. For instance, `.rc` files, `.conf` files, and even files like `~/ssh/authorized_keys`.
+
+Stubs for common supporting files are provided in this repo. Customize them and add others as needed.
+
+### Naming
+
+An optional **prefix** allows you to organize the supporting files.
+
+```text
+doas.conf
+apache--httpd.conf
+apache--index.php
+php--php.ini
+php--www.conf
+user--.bashrc
+user--.profile
+user--.vimrc
+user--authorized_keys
+```
+
+You can pass the prefix as an optional fourth parameter in your playbooks. *Good Boy* will add the `--` automatically.
+
+```shell
+# Fourth parameter showing prefix usage
+replaceFileWithRemote ".profile" "$DIR_USER_HOME" "$URL_REMOTE_PATH_SRC" "user"
+replaceFileWithRemote ".vimrc" "$DIR_USER_HOME" "$URL_REMOTE_PATH_SRC" "user"
+replaceFileWithRemote ".bashrc" "$DIR_USER_HOME" "$URL_REMOTE_PATH_SRC" "user"
+```
+
+Some more complex setups may have multiple supporting files with the same name. The prefix here can also be used to differentiate those files.
+
+```text
+user-btorres--.bashrc
+user-glaforge--.bashrc
+user-lbrahms--.bashrc
+```
+
+## Running the script
 
 ```shell
 fetch https://your-bucket.s3.amazonaws.com/good-boy.sh
@@ -108,7 +155,7 @@ $ ./good-boy.sh base
 
 ## Tips
 
-- Instead of performing line-by-line surgery on confs, finding and replacing target lines... Replace them with approved, final, full copies that you control.
+- Instead of performing line-by-line surgery on confs, finding and replacing target lines&hellip; Replace them with approved, final, full copies that you control.
   - Someone on a random Reddit post mentioned that once, and it has really transformed how I work. It's improved my understanding of the confs I work with, and it's so much cleaner to just roll your own full confs.
   - Be sure to keep an eye on your confs over time. Check for upstream changes for features and defaults, and incorporate them as needed.
 
@@ -125,4 +172,4 @@ $ ./good-boy.sh base
 - `serviceStart`
   - Restarts a service if it's already running.
 - `generateSSHKey`
-  - Sskips if key exists, always prints pubkey after.
+  - Skips if key exists. Prints the new pubkey after.
