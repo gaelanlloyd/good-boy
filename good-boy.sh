@@ -59,7 +59,7 @@ STR_TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
 STR_TIME_START_PRETTY=$(date +"%H:%M:%S")
 TIME_START=$(date +"%s")
 
-DIR_WORK=$(mktemp -d)
+DIR_WORK=$(mktemp -d -t "good-boy-$STR_TIMESTAMP")
 
 STR_USER_NAME="btorres"
 DIR_USER_HOME="/home/btorres"
