@@ -171,7 +171,7 @@ replaceFileWithRemote() {
 		prefix_part="$prefix--"
 	fi
 
-	writeTask "Replace $file with remote"
+	writeTask "Replace $local_path/$file with remote"
 
 	if ! fetch -q -o "$DIR_WORK/$file" "$remote_path/$prefix_part$file"; then
 		writeFail
