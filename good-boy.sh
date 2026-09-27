@@ -173,7 +173,10 @@ replaceFileWithRemote() {
 
 	writeTask "Replace $file with remote"
 
-	fetch -q -o "$DIR_WORK/$file" "$remote_path/$prefix_part$file"
+	if ! fetch -q -o "$DIR_WORK/$file" "$remote_path/$prefix_part$file"; then
+		writeFail
+		exit 1
+	fi
 
 	if [ -e "$local_path/$file" ]; then
 		mv "$local_path/$file" "$local_path/$file-$STR_TIMESTAMP"
