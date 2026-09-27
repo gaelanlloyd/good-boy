@@ -424,8 +424,13 @@ playbook_user() {
 
 	# Install dotfiles
 	replaceFileWithRemote ".profile" "$DIR_USER_HOME" "$URL_REMOTE_PATH_SRC" "user"
+	run "Set ownership of $DIR_USER_HOME/.profile" doas chown $STR_USER_NAME:$STR_USER_NAME "$DIR_USER_HOME/.profile"
+
 	replaceFileWithRemote ".vimrc" "$DIR_USER_HOME" "$URL_REMOTE_PATH_SRC" "user"
+	run "Set ownership of $DIR_USER_HOME/.vimrc" doas chown $STR_USER_NAME:$STR_USER_NAME "$DIR_USER_HOME/.vimrc"
+
 	replaceFileWithRemote ".bashrc" "$DIR_USER_HOME" "$URL_REMOTE_PATH_SRC" "user"
+	run "Set ownership of $DIR_USER_HOME/.bashrc" doas chown $STR_USER_NAME:$STR_USER_NAME "$DIR_USER_HOME/.bashrc"
 
 	# Configure SSH authorized_keys
 	directoryCreate "$DIR_USER_SSH"
