@@ -81,6 +81,10 @@ PLAYBOOK="$1"
 
 # --- DEFINE FUNCTIONS ---------------------------------------------------------
 
+write() {
+    printf '%s\n' "$1"
+}
+
 writeTask() {
     printf "\-\-> %s... " "$1"
 }
@@ -117,9 +121,9 @@ writeDone() {
 }
 
 writePlaybookStart() {
-    echo ""
+    write
     writeBanner "STARTING PLAYBOOK: $PLAYBOOK"
-    echo ""
+    write
     writeInfo "Temp path = $DIR_WORK"
     writeInfo "Started at $STR_TIME_START_PRETTY"
 }
@@ -134,7 +138,7 @@ run() {
         writeOk
     else
         writeFail
-        echo "$output"
+        write "$output"
         exit 1
     fi
 
@@ -151,7 +155,7 @@ runAsUser() {
         writeOk
     else
         writeFail
-        echo "$output"
+        write "$output"
         exit 1
     fi
 
@@ -198,7 +202,7 @@ directoryCreate() {
     # Safeguard against empty argument
     if [ -z "$1" ]; then
         writeFail
-        echo "No argument provided"
+        write "No argument provided"
         exit 1;
     fi
 
@@ -223,7 +227,7 @@ directoryDelete() {
     # Safeguard against empty argument
     if [ -z "$1" ]; then
         writeFail
-        echo "No argument provided"
+        write "No argument provided"
         exit 1;
     fi
 
@@ -306,38 +310,38 @@ writeUsage() {
 # --- TODO LISTS ---------------------------------------------------------------
 
 todo_base() {
-    echo " - Set up SSH"
-    echo " - Configure swap file"
-    echo " - Set timezone"
-    echo " - Set hostfile address"
-    echo " - Create user account $STR_USER_NAME"
+    write " - Set up SSH"
+    write " - Configure swap file"
+    write " - Set timezone"
+    write " - Set hostfile address"
+    write " - Create user account $STR_USER_NAME"
 }
 
 todo_user() {
-    echo " - Add the SSH pubkey to user $STR_USER_NAME GitHub/Codeberg accounts"
+    write " - Add the SSH pubkey to user $STR_USER_NAME GitHub/Codeberg accounts"
 }
 
 todo_famp() {
-    echo "MariaDB:"
-    echo " - Run /usr/local/bin/mysql_secure_installation"
-    echo " - Tune /usr/local/etc/mysql/conf.d/server.cnf"
-    echo ""
-    echo "Apache:"
-    echo " - Create an actual virtualhost wwwroot directory"
-    echo " - Add a virtualhost conf to /usr/local/etc/apache24/virtualhosts"
-    echo " - Uncomment /usr/local/etc/apache24/httpd.conf : Include virtualhosts"
-    echo " - Restart the apache24 service"
-    echo ""
-    echo "PHP:"
-    echo " - Replace /usr/local/etc/php.ini with a production version, if desired."
-    echo " - Tune /usr/local/etc/php-fpm.d/www.conf"
+    write "MariaDB:"
+    write " - Run /usr/local/bin/mysql_secure_installation"
+    write " - Tune /usr/local/etc/mysql/conf.d/server.cnf"
+    write ""
+    write "Apache:"
+    write " - Create an actual virtualhost wwwroot directory"
+    write " - Add a virtualhost conf to /usr/local/etc/apache24/virtualhosts"
+    write " - Uncomment /usr/local/etc/apache24/httpd.conf : Include virtualhosts"
+    write " - Restart the apache24 service"
+    write ""
+    write "PHP:"
+    write " - Replace /usr/local/etc/php.ini with a production version, if desired."
+    write " - Tune /usr/local/etc/php-fpm.d/www.conf"
 }
 
 writeTodo() {
 
-    echo ""
-    echo "--- TODO ---"
-    echo ""
+    write ""
+    write "--- TODO ---"
+    write ""
 
     case "$PLAYBOOK" in
         base) todo_base;;
@@ -345,7 +349,7 @@ writeTodo() {
         famp) todo_famp;;
     esac
 
-    echo ""
+    write ""
 
 }
 
