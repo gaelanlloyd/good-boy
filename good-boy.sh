@@ -161,32 +161,89 @@ runAsUser() {
 
 }
 
-replaceFileWithRemote() {
+installFile() {
 
-    file="$1"
-    local_path="$2"
-    remote_path="$3"
-    prefix="$4"        # Optional
+    # Usage:
+    # installFile \
+    #   file=NAME \
+    #   local_path=DIR\[remote_path=URL] \
+    #   owner=OWN \
+    #   group=GRP \
+    #   mode=MODE \
+    #   [prefix=STR] \
+    #
+    # local_path,
+    # remote_path:
+    #   - Trailing slashes are optional and will be stripped if passed.
+    #
+    # owner,
+    # group,
+    # mode:
+    #   - Required to reduce confusion and prevent accidental security issues.
 
-    prefix_part=""
+    # Define vars as local
+    local file local_path remote_path prefix owner group mode
+
+    # Set defaults
+    file=""
+    local_path=""
+    remote_path=$URL_REMOTE_PATH_SRC
+    prefix=""
+    owner=""
+    group=""
+    mode=""
+
+    # Iterate over args
+    for arg in "$@"; do
+        case "$arg" in
+            file=*)         file=${arg#file=} ;;
+            local_path=*)   local_path=${arg#local_path=} ;;
+            remote_path=*)  remote_path=${arg#remote_path=} ;;
+            owner=*)        owner=${arg#owner=} ;;
+            group=*)        group=${arg#group=} ;;
+            mode=*)         mode=${arg#mode=} ;;
+            prefix=*)       prefix=${arg#prefix=} ;;
+            *) printf 'installFile: unknown parameter: %s\n' "$arg" >&2
+               return 2 ;;
+        esac
+    done
+
+    # Check for errors
+
+    [ -n "$file" ] || { echo "installFile: [file] is required" >&2; return 2; }
+    [ -n "$local_path" ] || { echo "installFile: [local_path] is required" >&2; return 2; }
+    [ -n "$remote_path" ] || { echo "installFile: [remote_path] is required" >&2; return 2; }
+    [ -n "$owner" ] || { echo "installFile: [owner] is required" >&2; return 2; }
+    [ -n "$group" ] || { echo "installFile: [group] is required" >&2; return 2; }
+    [ -n "$mode" ] || { echo "installFile: [mode] is required" >&2; return 2; }
+
+    # Strip trailing slashes if necessary
+    local_path=${local_path%/}
+    remote_path=${remote_path%/}
+
+    writeTask "Install $local_path/$file from remote ($owner:$group,$mode)"
 
     # If a prefix is provided, set prefix_part to [prefix + `--`]
     if [ -n "$prefix" ]; then
-        prefix_part="$prefix--"
+        prefix="$prefix--"
     fi
 
-    writeTask "Replace $local_path/$file with remote"
-
-    if ! fetch -q -o "$DIR_WORK/$file" "$remote_path/$prefix_part$file"; then
+    # Download the remote file to the temp folder
+    if ! fetch -q -o "$DIR_WORK/$file" "$remote_path/$prefix$file"; then
         writeFail
         exit 1
     fi
 
+    # If the target file exists, move it out of the way
     if [ -e "$local_path/$file" ]; then
         mv "$local_path/$file" "$local_path/$file-$STR_TIMESTAMP"
     fi
 
-    if cp -- "$DIR_WORK/$file" $local_path/; then
+    if install -o "$owner" \
+        -g "$group" \
+        -m "$mode" \
+        "$DIR_WORK/$file" \
+        "$local_path/$file"; then
         writeOk
     else
         writeFail
@@ -195,27 +252,59 @@ replaceFileWithRemote() {
 
 }
 
-directoryCreate() {
+installDir() {
 
-    writeTask "Create directory $1"
+    # Usage:
+    # installDir \
+    #   path=NAME \
+    #   owner=OWN \
+    #   group=GRP \
+    #   mode=MODE \
+    #
+    # owner,
+    # group,
+    # mode:
+    #   - Required to reduce confusion and prevent accidental security issues.
 
-    # Safeguard against empty argument
-    if [ -z "$1" ]; then
-        writeFail
-        write "No argument provided"
-        exit 1;
-    fi
+    # Define vars as local
+    local path owner group mode
 
-    # Create directory only if it does not exist
-    if [ ! -d "$1" ]; then
-        if mkdir -p -- "$1"; then
-            writeOk
-        else
-            writeFail
-            exit 1
-        fi
-    else
+    # Set defaults
+    path=""
+    owner=""
+    group=""
+    mode=""
+
+    # Iterate over args
+    for arg in "$@"; do
+        case "$arg" in
+            path=*)         path=${arg#path=} ;;
+            owner=*)        owner=${arg#owner=} ;;
+            group=*)        group=${arg#group=} ;;
+            mode=*)         mode=${arg#mode=} ;;
+            *) printf 'installDir: unknown parameter: %s\n' "$arg" >&2
+               return 2 ;;
+        esac
+    done
+
+    # Check for errors
+
+    [ -n "$path" ] || { echo "installDir: [path] is required" >&2; return 2; }
+    [ -n "$owner" ] || { echo "installDir: [owner] is required" >&2; return 2; }
+    [ -n "$group" ] || { echo "installDir: [group] is required" >&2; return 2; }
+    [ -n "$mode" ] || { echo "installDir: [mode] is required" >&2; return 2; }
+
+    writeTask "Create directory $path ($owner:$group,$mode)"
+
+    if install -d \
+        -o "$owner" \
+        -g "$group" \
+        -m "$mode" \
+        "$path"; then
         writeOk
+    else
+        writeFail
+        exit 1
     fi
 
 }
@@ -402,7 +491,7 @@ playbook_base() {
     run "Installing $PLAYBOOK packages" pkg install -y -q "$@"
 
     # Configure doas
-    replaceFileWithRemote "doas.conf" "/usr/local/etc/" "$URL_REMOTE_PATH_SRC"
+    installFile file="doas.conf" local_path="/usr/local/etc" owner="root" group="wheel" mode="0640"
 
     # Initialize the locate DB
     run "Enable weekly updates to locate database" sysrc weekly_locate_enable="YES"
@@ -427,23 +516,13 @@ playbook_user() {
     run "Change user $STR_USER_NAME shell to Bash" chsh -s /usr/local/bin/bash $STR_USER_NAME
 
     # Install dotfiles
-    replaceFileWithRemote ".profile" "$DIR_USER_HOME" "$URL_REMOTE_PATH_SRC" "user"
-    run "Set ownership of $DIR_USER_HOME/.profile" doas chown $STR_USER_NAME:$STR_USER_NAME "$DIR_USER_HOME/.profile"
-
-    replaceFileWithRemote ".vimrc" "$DIR_USER_HOME" "$URL_REMOTE_PATH_SRC" "user"
-    run "Set ownership of $DIR_USER_HOME/.vimrc" doas chown $STR_USER_NAME:$STR_USER_NAME "$DIR_USER_HOME/.vimrc"
-
-    replaceFileWithRemote ".bashrc" "$DIR_USER_HOME" "$URL_REMOTE_PATH_SRC" "user"
-    run "Set ownership of $DIR_USER_HOME/.bashrc" doas chown $STR_USER_NAME:$STR_USER_NAME "$DIR_USER_HOME/.bashrc"
+    installFile file=".profile" local_path="$DIR_USER_HOME" prefix="user" owner="$STR_USER_NAME" group="$STR_USER_NAME" mode="644"
+    installFile file=".vimrc" local_path="$DIR_USER_HOME" prefix="user" owner="$STR_USER_NAME" group="$STR_USER_NAME" mode="644"
+    installFile file=".bashrc" local_path="$DIR_USER_HOME" prefix="user" owner="$STR_USER_NAME" group="$STR_USER_NAME" mode="644"
 
     # Configure SSH authorized_keys
-    directoryCreate "$DIR_USER_SSH"
-    run "Set ownership of $DIR_USER_SSH" doas chown $STR_USER_NAME:$STR_USER_NAME "$DIR_USER_SSH"
-    run "Set permissions on $DIR_USER_SSH" doas chmod 700 "$DIR_USER_SSH"
-
-    replaceFileWithRemote "authorized_keys" "$DIR_USER_SSH/" "$URL_REMOTE_PATH_SRC" "user"
-    run "Set ownership of authorized_keys" chown $STR_USER_NAME:$STR_USER_NAME $DIR_USER_SSH/authorized_keys
-    run "Set permissions on authorized_keys" chmod 600 $DIR_USER_SSH/authorized_keys
+    installDir path="$DIR_USER_SSH" owner="$STR_USER_NAME" group="$STR_USER_NAME" mode="700"
+    installFile file="authorized_keys" local_path="$DIR_USER_SSH" prefix="user" owner="$STR_USER_NAME" group="$STR_USER_NAME" mode="600"
 
     run "Silence login" touch $DIR_USER_HOME/.hushlogin
     run "Set ownership of $DIR_USER_HOME/.hushlogin" chown $STR_USER_NAME:$STR_USER_NAME $DIR_USER_HOME/.hushlogin
@@ -495,22 +574,21 @@ playbook_famp() {
 
     # --- Apache
 
-    replaceFileWithRemote "httpd.conf" "/usr/local/etc/apache24/" "$URL_REMOTE_PATH_SRC" "apache"
+    installFile file="httpd.conf" local_path="/usr/local/etc/apache24/" prefix="apache" owner="root" group="wheel" mode="644"
 
-    directoryCreate /usr/local/etc/apache24/virtualhosts
+    installDir path="/var/log/apache" owner="root" group="wheel" mode="775"
 
-    directoryCreate /srv/html
-    run "Set permissions on /srv" chmod -R 775 /srv
+    installDir path="/usr/local/etc/apache24/virtualhosts" owner="root" group="wheel" mode="755"
 
-    directoryCreate /var/log/apache
-    run "Set ownership of /var/log/apache" doas chown root:wheel /var/log/apache
-    run "Set permissions on /var/log/apache" doas chmod 755 /var/log/apache
+    installDir path="/srv" owner="root" group="wheel" mode="775"
+    installDir path="/srv/sites" owner="root" group="wheel" mode="775"
+    installDir path="/srv/sites/www" owner="www" group="www" mode="755"
 
     # --- PHP
 
-    replaceFileWithRemote "php.ini" "/usr/local/etc/" "$URL_REMOTE_PATH_SRC" "php"
-    replaceFileWithRemote "www.conf" "/usr/local/etc/php-fpm.d/" "$URL_REMOTE_PATH_SRC" "php"
-    replaceFileWithRemote "index.php" "/usr/local/www/apache24/data/" "$URL_REMOTE_PATH_SRC" "apache"
+    installFile file="php.ini" local_path="/usr/local/etc/" prefix="php" owner="root" group="wheel" mode="644"
+    installFile file="www.conf" local_path="/usr/local/etc/php-fpm.d/" prefix="php" owner="root" group="wheel" mode="644"
+    installFile file="index.php" local_path="/usr/local/www/apache24/data/" prefix="apache" owner="root" group="wheel" mode="644"
 
     # --- Enable and start services
 
