@@ -2,9 +2,9 @@
 
 # ------------------------------------------------------------------------------
 #
-# Good Boy
+# Good Boy - v1.1
 #
-# Zero-dependency, native-FreeBSD bootstrapper in a smol, single sh script.
+# Zero-dependency, native FreeBSD bootstrapper written in sh.
 #
 # By Gaelan Lloyd, 2026-05
 #
